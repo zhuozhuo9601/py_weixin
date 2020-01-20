@@ -1,9 +1,11 @@
+import json
 import os
 import tkinter as tk  # 使用Tkinter前需要先导入
 
 import sys
 
 import time
+from tkinter import ttk
 
 import requests
 
@@ -13,7 +15,7 @@ class tk_t(object):
         window = tk.Tk()
         self.window = window
         window.title('My Window')
-        window.geometry('500x300')
+        window.geometry('500x350')
         canvas = tk.Canvas(window, bg='black', height=200, width=500)
         dir_path = os.getcwd()
         c_sys = sys.platform
@@ -34,8 +36,8 @@ class tk_t(object):
         self.v_word = v_word
         username.pack()
         password.pack()
-        b = tk.Button(window, text="登陆", command=self.user_value).place(x=170, y=260)
-        b_out = tk.Button(window, text="退出", command=window.quit).place(x=280, y=260)
+        b = tk.Button(window, text="登陆", command=self.user_value).place(x=160, y=300)
+        b_out = tk.Button(window, text="退出", command=window.quit).place(x=270, y=300)
         window.mainloop()
 
     def user_value(self):
@@ -45,13 +47,13 @@ class tk_t(object):
             "username": user_name,
             "password": user_word
         }
-        self.window.destroy()
-        time.sleep(1)
-        res = user_login(user_dict)
-        print(res)
-        if '200' in str(res):
+        res_dict = user_login(user_dict)
+        if res_dict['code'] == '200':
+            self.window.destroy()
+            time.sleep(1)
             chat_with()
-        return res
+        else:
+            password2 = tk.Label(self.window, text='用户名密码不正确', bg='red').place(x=190, y=270)
 
 
 class chat_with(object):
@@ -64,7 +66,7 @@ class chat_with(object):
 
 
 def user_login(user_dict):
-    url = "http://www.zexclusive.top/login/"
+    url = "http://127.0.0.1:8001/gui_password/"
     data = {'username': user_dict['username'],
             'password': user_dict['password']
             }
@@ -76,12 +78,13 @@ def user_login(user_dict):
         'Content-Length': '49',
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
         'Cookie': 'sessionid=q74c4gm9tng3nglitay95yqmxsux4dhp',
-        'Host': 'www.zexclusive.top',
-        'Referer': 'http://www.zexclusive.top/login/',
+        'Host': '127.0.0.1:8001',
+        'Referer': 'http://127.0.0.1:8001/gui_password/',
         'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36',
         'X-Requested-With': 'XMLHttpRequest'
     }
     res = requests.post(url=url, data=data, headers=headers, verify=False)
-    return res
+    res_dict = json.loads(res.content.decode())
+    return res_dict
 
 tk_t()
