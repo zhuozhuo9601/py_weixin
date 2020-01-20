@@ -48,6 +48,7 @@ class tk_t(object):
         self.window.destroy()
         time.sleep(1)
         res = user_login(user_dict)
+        print(res)
         if '200' in str(res):
             chat_with()
         return res
