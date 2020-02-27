@@ -9,6 +9,7 @@ import time
 from tkinter import ttk
 from tkinter.tix import ComboBox
 
+import redis as redis
 import requests
 
 
@@ -93,8 +94,11 @@ class chat_with(object):
         t_text.place(x=0, y=200)
 
         self.t_text = t_text
+
         Button(chat, text="发送消息", command=self.chat_text, bg='blue').place(x=430, y=250)
         chat.mainloop()
+        # tcp_server()
+
 
     def chat_frame(self):
         """
@@ -103,12 +107,20 @@ class chat_with(object):
         """
         canvas = Canvas(self.chat, bg='green', height=100, width=300).place(x=0, y=40)
 
+        conn = redis.Redis(host='localhost', port=6379, password='django_redis')
+        # 可以使用url方式连接到数据库
+        # conn = Redis.from_url('redis://[:django_redis]@localhost:6379/1')
+        user_ip = conn.get('lizhuo01')
+        print(str(user_ip.decode()))
+        # tcp_client(user_ip)
+
+
     def chat_text(self):
         """
         测试用户输入的信息
         :return:
         """
-        aaa = self.t_text.get()
+        user_news = self.t_text.get()
 
 
 
@@ -140,6 +152,7 @@ def user_login(user_dict):
     }
     res = requests.post(url=url, data=data, headers=headers, verify=False)
     res_dict = json.loads(res.content.decode())
+    print(res_dict)
     return res_dict
 
 def get_host_ip():
@@ -154,5 +167,43 @@ def get_host_ip():
     finally:
         s.close()
     return ip
+
+
+def tcp_server():
+    # server.py 服务端
+    sk = socket.socket()
+    # socket()参数中：family（基于……通信）=AF_INET（网络通信）, type（协议）=SOCK_STREAM（TCP协议），TCP协议默认不用写，如果想要写协议必须是：type=socket.SOCK_STREAM
+    sk.bind((get_host_ip(), 9000))
+    sk.listen()
+    while True:
+        conn, addr = sk.accept()
+        while True:
+            msg = conn.recv(1024)
+            if msg.decode('utf-8').upper() == 'Q':
+                break
+            print(msg.decode('utf-8'))
+            cont = input('内容(输入Q断开)：')
+            conn.send(cont.encode('utf-8'))
+            if cont.upper() == 'Q':
+                break
+        conn.close()
+    sk.close()
+
+
+def tcp_client(user_ip):
+    sk = socket.socket()
+    sk.connect((user_ip, 9000))
+    while True:
+        msg = sk.recv(1024)
+        if msg.decode('utf-8').upper() == 'Q':
+            break
+        print(msg.decode('utf-8'))
+        cont = input('内容(输入Q断开)：')
+        sk.send(cont.encode('utf-8'))
+        if cont.upper() == 'Q':
+            break
+    sk.close()
+
+
 
 tk_t()
