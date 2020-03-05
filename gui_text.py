@@ -1,6 +1,7 @@
 import json
 import os
 import socket
+import threading
 from tkinter import *
 
 import sys
@@ -62,7 +63,7 @@ class tk_t(object):
         if res_dict['code'] == '200':
             self.window.destroy()
             time.sleep(1)
-            chat_with(res_dict['data'])
+            c = chat_with(res_dict['data'], '1')
         else:
             password2 = Label(self.window, text='用户名密码不正确', bg='red').place(x=190, y=270)
 
@@ -71,34 +72,33 @@ class chat_with(object):
     """
     进入主界面
     """
-    def __init__(self, user_list):
-        chat = Tk()
-        chat.title('My Window')
-        chat.geometry('500x300')
-        Label(chat, text='进入主界面了', bg='red', font=('Arial', 16)).pack()
-        frame = Frame(chat)
-        frame.pack()
-        # frame_l = tk.Frame(frame)
-        # frame_r = tk.Frame(frame)
-        # frame_l.pack(side='left')
-        # frame_r.pack(side='right')
-        # l1 = tk.Label(frame, text='第一句').pack()
-        self.frame = frame
-        self.chat = chat
-        num_x = 50
-        for tk_user in user_list:
-            Button(chat, text="{}".format(tk_user), command=self.chat_frame, bg='red').place(x=430, y=num_x)
-            num_x += 40
-        text_name = StringVar()
-        t_text = Entry(chat, show=None, font=('Arial', 14), textvariable=text_name)
-        t_text.place(x=0, y=200)
+    def __init__(self, user_list, tcp_a):
+        if tcp_a != '2':
+            chat = Tk()
+            chat.title('My Window')
+            chat.geometry('500x300')
+            Label(chat, text='进入主界面了', bg='red', font=('Arial', 16)).pack()
+            frame = Frame(chat)
+            frame.pack()
+            # frame_l = tk.Frame(frame)
+            # frame_r = tk.Frame(frame)
+            # frame_l.pack(side='left')
+            # frame_r.pack(side='right')
+            # l1 = tk.Label(frame, text='第一句').pack()
+            self.frame = frame
+            self.chat = chat
+            num_x = 50
+            for tk_user in user_list:
+                Button(chat, text="{}".format(tk_user), command=self.chat_frame, bg='red').place(x=430, y=num_x)
+                num_x += 40
+            text_name = StringVar()
+            t_text = Entry(chat, show=None, font=('Arial', 14), textvariable=text_name)
+            t_text.place(x=0, y=200)
 
-        self.t_text = t_text
+            self.t_text = t_text
 
-        Button(chat, text="发送消息", command=self.chat_text, bg='blue').place(x=430, y=250)
-        chat.mainloop()
-        # tcp_server()
-
+            Button(chat, text="发送消息", command=self.chat_text, bg='blue').place(x=430, y=250)
+            chat.mainloop()
 
     def chat_frame(self):
         """
@@ -106,13 +106,14 @@ class chat_with(object):
         :return:
         """
         canvas = Canvas(self.chat, bg='green', height=100, width=300).place(x=0, y=40)
-
+        self.canvas = canvas
         conn = redis.Redis(host='localhost', port=6379, password='django_redis')
         # 可以使用url方式连接到数据库
         # conn = Redis.from_url('redis://[:django_redis]@localhost:6379/1')
         user_ip = conn.get('lizhuo01')
         print(str(user_ip.decode()))
-        # tcp_client(user_ip)
+        client_value = tcp_client(user_ip)
+        self.tcp_value = client_value
 
 
     def chat_text(self):
@@ -121,8 +122,16 @@ class chat_with(object):
         :return:
         """
         user_news = self.t_text.get()
+        print('测试用户输入的数据:', user_news)
+        self.tcp_value.send(user_news.encode('utf-8'))
+        print('发送成功')
+        username = Label(self.canvas, text='用户1:').place(x=0, y=40)
+        user_message = Label(self.canvas, text=user_news).place(x=20, y=60)
 
-
+    def chat_client(self, value):
+        print(value)
+        username = Label(self.canvas, text='用户2:').place(x=0, y=80)
+        user_message = Label(self.canvas, text=value).place(x=20, y=100)
 
 
 def user_login(user_dict):
@@ -170,10 +179,15 @@ def get_host_ip():
 
 
 def tcp_server():
+    # host = socket.gethostname()
+    port = 9010
     # server.py 服务端
-    sk = socket.socket()
+    # print('能不能获取主机名字', host)
+    sk = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # SOCK_STREAM==流式协议：指的就是TCP协议
+    sk.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     # socket()参数中：family（基于……通信）=AF_INET（网络通信）, type（协议）=SOCK_STREAM（TCP协议），TCP协议默认不用写，如果想要写协议必须是：type=socket.SOCK_STREAM
-    sk.bind((get_host_ip(), 9000))
+    sk.bind((get_host_ip(), port))
+    # sk.bind((host, port))
     sk.listen()
     while True:
         conn, addr = sk.accept()
@@ -186,24 +200,44 @@ def tcp_server():
             conn.send(cont.encode('utf-8'))
             if cont.upper() == 'Q':
                 break
-        conn.close()
-    sk.close()
-
+        print('服务端接收到的数据:', conn, addr)
+    # conn.close()
+    # sk.close()
+    # while True:
+    #     client_socket, addr = sk.accept()
+    #     print("连接地址: {str(addr)}")
+    #
+    #     # 错误二、当发来的数据很长时tcp不会等接收完成再执行下一条语句，这里没处理这个问题
+    #     result = client_socket.recv(1024 * 1024)
+    #     # 问题一、decode默认使用utf-8编码，但当发来的数据有utf-8不可解码内容时会报异常，这里没捕获异常
+    #     print("{result.decode()}")
+    #
+    #     # 错误三、发送时tcp不会等发送完再执行下一条语句，这里没处理这个问题
+    #     client_socket.send(result)
+    #     # 注意四、如果客户端中的接收代码是和上边错误二一样的，那么没发完也会被客户端reset
+    #     client_socket.close()
 
 def tcp_client(user_ip):
     sk = socket.socket()
-    sk.connect((user_ip, 9000))
-    while True:
-        msg = sk.recv(1024)
-        if msg.decode('utf-8').upper() == 'Q':
-            break
-        print(msg.decode('utf-8'))
-        cont = input('内容(输入Q断开)：')
-        sk.send(cont.encode('utf-8'))
-        if cont.upper() == 'Q':
-            break
-    sk.close()
+    sk.connect((user_ip, 9010))
+    # while True:
+    #     print('客户端连接到服务端')
+    #     msg = sk.recv(1024)
+    #     if msg.decode('utf-8').upper() == 'Q':
+    #         break
+    #     print(msg.decode('utf-8'))
+    #     cont = input('内容(输入Q断开)：')
+    #     sk.send(cont.encode('utf-8'))
+    #     if cont.upper() == 'Q':
+    #         break
+    # sk.close()
+    return sk
 
+if __name__ == '__main__':
+    # tcp_server()
+    # tk_t = tk_t()
+    t1 = threading.Thread(target=tcp_server)
+    t2 = threading.Thread(target=tk_t)
+    t1.start()
+    t2.start()
 
-
-tk_t()
