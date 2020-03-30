@@ -8,7 +8,10 @@ def index_method():
     index_url = 'http://reg.hongchenzx.com/'
     index = requests.get(url=index_url)
     cookie_t = requests.utils.dict_from_cookiejar(index.cookies)
+    cookie_dict = index.cookies.get_dict()
+
     print(cookie_t)
+    print(cookie_dict)
 
     # 先拿到访问的验证码
     url = "http://reg.hongchenzx.com/voice/vcode.php"
@@ -19,46 +22,46 @@ def index_method():
     f.write(r.content)
     # 关闭文件流对象
     f.close()
-    code = input('请输入访问到的验证码:')
-    lord(code)
+    # code = input('请输入访问到的验证码:')
+    # lord(code)
 
 def lord(code):
-    # for i in range(0, 200):
-    #     if i < 10:
-    #         i = '0' + str(i)
-    url = 'http://reg.hongchenzx.com/reg.php'
+    for i in range(0, 200):
+        if i < 10:
+            i = '0' + str(i)
+        url = 'http://reg.hongchenzx.com/reg.php'
 
-    data = {
-        'select': "3",
-        'username': "zhiaiwoq07",
-        'passwd': "741741",
-        'repeatpasswd': "741741",
-        'email': "nono@qq.com",
-        'question': "-----",
-        'answer': "741741",
-        'qq': "847951227",
-        'yzm': str(code),
-        'Submit': "立即注册"
-    }
-    headers = {
-        'Accept': 'text / html, application / xhtml + xml, application / xml;q = 0.9, image / webp, image / apng, * / *;q = 0.8, application / signed - exchange;v = b3;q = 0.9',
-        'Accept - Encoding': 'gzip, deflate',
-        'Accept - Language': 'zh - CN, zh;q = 0.9',
-        'Cache - Control': 'max - age = 0',
-        'Connection': 'keep - alive',
-        'Content - Length': 177,
-        'Content - Type': 'application / x - www - form - urlencoded',
-        'Cookie': '__cfduid = d9e6c6dc9720ad32687d43eb5631387b71585552879;PHPSESSID = jd1vnhmvci976ds3dtqrkq9t06',
-        'Host': 'reg.hongchenzx.com',
-        'Origin': 'http://reg.hongchenzx.com',
-        'Referer': 'http://reg.hongchenzx.com/',
-        'Upgrade - Insecure - Requests': 1,
-        'User - Agent': 'Mozilla / 5.0(Windows NT 6.1;Win64; x64) AppleWebKit / 537.36(KHTML, like Gecko) Chrome / 80.0.3987.149 Safari / 537.36'
-    }
+        data = {
+            'select': "3",
+            'username': "zhiaiwoq07",
+            'passwd': "741741",
+            'repeatpasswd': "741741",
+            'email': "nono@qq.com",
+            'question': "-----",
+            'answer': "741741",
+            'qq': "847951227",
+            'yzm': str(code),
+            'Submit': "立即注册"
+        }
+        headers = {
+            'Accept': 'text/html, application/xhtml+xml, application/xml;q=0.9, image/webp, image/apng, */*;q=0.8, application/signed-exchange;v=b3;q=0.9',
+            'Accept-Encoding': 'gzip, deflate',
+            'Accept-Language': 'zh-CN,zh;q=0.9',
+            'Cache-Control': 'max-age = 0',
+            'Connection': 'keep-alive',
+            'Content-Length': 177,
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Cookie': '__cfduid=dcda3066f3ce689a49481db36c6036b3f1585549209; PHPSESSID=ikp34i5aivdat4o81suufmmpo3',
+            'Host': 'reg.hongchenzx.com',
+            'Origin': 'http://reg.hongchenzx.com',
+            'Referer': 'http://reg.hongchenzx.com/',
+            'Upgrade - Insecure - Requests': 1,
+            'User - Agent': 'Mozilla/5.0(Windows NT 6.1;Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36'
+        }
 
-    req = requests.post(url, data=data)  # 发送post请求，第一个参数是URL，第二个参数是请求数据
+        req = requests.post(url, data=data, headers=headers)  # 发送post请求，第一个参数是URL，第二个参数是请求数据
 
-    print(req.text)
+        print(req.text)
 
 if __name__ == '__main__':
     # 使用threading模块，threading.Thread()创建线程，其中target参数值为需要调用的方法，同样将其他多个线程放在一个列表中，遍历这个列表就能同时执行里面的函数了
@@ -67,5 +70,4 @@ if __name__ == '__main__':
     # for t in threads:
     #     # 启动线程
     #     t.start()
-    # index_method()
-    lord('8317')
+    index_method()
